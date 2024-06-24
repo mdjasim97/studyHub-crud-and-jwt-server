@@ -4,7 +4,7 @@ require('dotenv').config()
 const port = process.env.PORT || 5000
 
 const cors = require('cors')
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const cookieParser = require('cookie-parser')
 
 app.use(cors())
@@ -36,10 +36,55 @@ async function run() {
         const database = client.db("assignmentDB");
         const ass_Collection = database.collection("assignments")
 
-        app.post("/createAssign", async(req, res) => {
+        app.get("/assignments", async (req, res) => {
+            const result = await ass_Collection.find().toArray()
+            res.send(result)
+        })
+
+        app.get("/assignments/:id", async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) }
+            const result = await ass_Collection.findOne(query)
+            res.send(result)
+        })
+
+
+        app.post("/createAssign", async (req, res) => {
             const reqBody = req.body;
             console.log(reqBody)
             const result = await ass_Collection.insertOne(reqBody);
+            res.send(result)
+        })
+
+
+        app.put("/updateAssign/:id", async (req, res) => {
+            const id = req.params.id;
+            const reqBody = req.body
+            const query = { _id: new ObjectId(id) }
+            const options = { upsert: true }
+
+            console.log("Update Route hitting...", id)
+
+
+            const updateData = {
+                $set: {
+                    title: reqBody.title,
+                    description: reqBody.description,
+                    marks: reqBody.marks,
+                    image_url: reqBody.image_url,
+                    ass_lavel: reqBody.ass_lavel,
+                    selectDate: reqBody.selectDate
+                }
+            }
+
+            const result = await ass_Collection.updateOne(query, updateData, options)
+            res.send(result)
+        })
+
+        app.delete("/deleteAssign/:id", async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) }
+            const result = await ass_Collection.deleteOne(query);
             res.send(result)
         })
 
