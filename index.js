@@ -35,6 +35,7 @@ async function run() {
 
         const database = client.db("assignmentDB");
         const ass_Collection = database.collection("assignments")
+        const submitCollection = database.collection("assSubmited")
 
         app.get("/assignments", async (req, res) => {
             const result = await ass_Collection.find().toArray()
@@ -81,10 +82,22 @@ async function run() {
             res.send(result)
         })
 
+
+
         app.delete("/deleteAssign/:id", async (req, res) => {
             const id = req.params.id;
             const query = { _id: new ObjectId(id) }
             const result = await ass_Collection.deleteOne(query);
+            res.send(result)
+        })
+
+
+        // submitted assignment route
+        app.post("/submitAssign", async (req, res) => {
+            const reqBody = req.body
+            console.log("submit Assignment route hitting")
+            console.log(reqBody)
+            const result = await submitCollection.insertOne(reqBody);
             res.send(result)
         })
 
