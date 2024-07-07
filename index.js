@@ -35,13 +35,15 @@ async function run() {
 
         const database = client.db("assignmentDB");
         const ass_Collection = database.collection("assignments")
-        const submitCollection = database.collection("assSubmited")
+        const submitCollection = database.collection("assSubmit")
 
+        // all assignment data route get from mongodb database 
         app.get("/assignments", async (req, res) => {
             const result = await ass_Collection.find().toArray()
             res.send(result)
         })
 
+        // get assignment details by id from mongodb database 
         app.get("/assignments/:id", async (req, res) => {
             const id = req.params.id;
             const query = { _id: new ObjectId(id) }
@@ -49,7 +51,7 @@ async function run() {
             res.send(result)
         })
 
-
+        // create assignment and data store in mongodb database 
         app.post("/createAssign", async (req, res) => {
             const reqBody = req.body;
             console.log(reqBody)
@@ -57,15 +59,14 @@ async function run() {
             res.send(result)
         })
 
-
+        // update assignment data by id and store mongodb database 
         app.put("/updateAssign/:id", async (req, res) => {
             const id = req.params.id;
+            console.log(id)
             const reqBody = req.body
             const query = { _id: new ObjectId(id) }
             const options = { upsert: true }
-
-            console.log("Update Route hitting...", id)
-
+            // console.log("Update Route hitting...", id)
 
             const updateData = {
                 $set: {
@@ -82,8 +83,7 @@ async function run() {
             res.send(result)
         })
 
-
-
+        // delete assignment by id from mongodb database 
         app.delete("/deleteAssign/:id", async (req, res) => {
             const id = req.params.id;
             const query = { _id: new ObjectId(id) }
@@ -92,17 +92,64 @@ async function run() {
         })
 
 
-        // submitted assignment route
-        app.post("/submitAssign", async (req, res) => {
+
+        app.post("/assingment", async (req, res) => {
             const reqBody = req.body
-            console.log("submit Assignment route hitting")
-            console.log(reqBody)
             const result = await submitCollection.insertOne(reqBody);
             res.send(result)
         })
 
+
+         // submitted assignment route
+         app.get("/MyAssignList/:email", async (req, res) => {
+            const email = req.params.email;
+            // console.log(req.params)
+            const query = { user_email: email }
+            console.log(query)
+            const result = await submitCollection.find(query).toArray();
+            res.send(result)
+        })
+
+         app.get("/pendingList/:email", async (req, res) => {
+            const email = req.params.email;
+            const query = {owener_email : email}
+            const result = await submitCollection.find(query).toArray()
+            res.send(result)
+        })
+
+        // update assignment status 
+        app.put("/updateStatus/:id", async (req, res) => {
+            const id = req.params.id;
+            console.log(id)
+            const reqBody = req.body
+            console.log(reqBody)
+            const query = { _id: new ObjectId(id) }
+            // const options = { upsert: true }
+            console.log("Status update route hitting")
+
+            const updatedoc = {
+                $set: {
+                    mark : reqBody.mark,
+                    feedback : reqBody.feedback,
+                    status : reqBody.status
+                }
+            }
+
+            const result = await submitCollection.updateOne(query, updatedoc);
+            res.send(result)
+        })
+
+
+        // app.get("/pendingList/:id", async (req, res) => {
+
+        //     const result = await pendingCollection.find().toArray()
+        //     res.send(result)
+        // })
+
+
+
         // Send a ping to confirm a successful connection
-        await client.db("admin").command({ ping: 1 });
+        // await client.db("admin").command({ ping: 1 });
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
     } finally {
         // Ensures that the client will close when you finish/error
