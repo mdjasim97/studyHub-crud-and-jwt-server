@@ -13,7 +13,6 @@ const corsOptions = {
     origin: [
         'http://localhost:5173',
         'http://localhost:5174'
-
     ],
     credentials: true
 
@@ -68,9 +67,9 @@ async function run() {
                 jwt.verify(token, process.env.TOKEN_SECREATE_KEY, (err, decode) => {
                     if (err) {
                         console.log(err)
-                        // return res.status(401).send({ message: "unauthorized access" })
+                        return res.status(401).send({ message: "unauthorized access" })
                     }
-                    console.log(decode)
+                    // console.log(decode)
                     req.user = decode
                     next()
                 })
@@ -81,12 +80,12 @@ async function run() {
         // Token create route
         app.post('/jwt', async (req, res) => {
             const user = req.body
-            console.log(user)
+            // console.log(user)
             const token = jwt.sign(user, process.env.TOKEN_SECREATE_KEY, {
                 expiresIn: '2d',
             })
             res.cookie('token', token, cookieOptions).send({ success: true })
-            console.log('token', token)
+            // console.log('token', token)
         })
 
         app.get('/logout', (req, res) => {
@@ -102,7 +101,7 @@ async function run() {
 
         app.get("/assignments", async (req, res) => {
             try {
-                const cursor = ass_Collection.find({}, { projection: { _id: 1, title: 1, image_url: 1, marks: 1, ass_lavel: 1 } });
+                const cursor = ass_Collection.find({}, { projection: { _id: 1, title: 1, image_url: 1, marks: 1, ass_lavel: 1, user_email :1 } });
                 cursor.sort({ title: 1 });
                 const result = await cursor.toArray();
                 res.send(result);
@@ -123,15 +122,15 @@ async function run() {
         // create assignment and data store in mongodb database 
         app.post("/createAssign", verifyToken, async (req, res) => {
             const reqBody = req.body;
-            console.log(reqBody)
+            // console.log(reqBody)
             const result = await ass_Collection.insertOne(reqBody);
             res.send(result)
         })
 
         // update assignment data by id and store mongodb database 
-        app.put("/updateAssign/:id", verifyToken, async (req, res) => {
+        app.put("/updateAssign/:id", async (req, res) => {
             const id = req.params.id;
-            console.log(id)
+            // console.log(id)
             const reqBody = req.body
             const query = { _id: new ObjectId(id) }
             const options = { upsert: true }
@@ -153,7 +152,7 @@ async function run() {
         })
 
         // delete assignment by id from mongodb database 
-        app.delete("/deleteAssign/:id", verifyToken, async (req, res) => {
+        app.delete("/deleteAssign/:id", async (req, res) => {
             const id = req.params.id;
             const query = { _id: new ObjectId(id) }
             const result = await ass_Collection.deleteOne(query);
@@ -182,22 +181,26 @@ async function run() {
             res.send(result)
         })
 
-        app.get("/pendingList/:email", verifyToken, async (req, res) => {
-            const email = req.params.email;
-            const query = { owener_email: email }
-            const result = await submitCollection.find(query).toArray()
-            res.send(result)
-        })
+        
+        // only created user prending list show 
+        // app.get("/pendingList/:email", verifyToken, async (req, res) => {
+        //     const email = req.params.email;
+        //     const query = { owener_email: email }
+        //     const result = await submitCollection.find(query).toArray()
+        //     res.send(result)
+        // })
+
+        app.get("/pendingList", verifyToken, async (req, res) => {
+                const result = await submitCollection.find().toArray()
+                res.send(result)
+            })
 
         // update assignment status 
         app.put("/updateStatus/:id", verifyToken, async (req, res) => {
             const id = req.params.id;
-            // console.log(id)
             const reqBody = req.body
             console.log(reqBody)
             const query = { _id: new ObjectId(id) }
-            // const options = { upsert: true }
-            console.log("Status update route hitting")
 
             const updatedoc = {
                 $set: {
